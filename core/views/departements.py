@@ -21,7 +21,12 @@ def page_departement_detail(request, slug):
     payload["page_menu"] = {
         "title": "Sommaire",
         "items": generate_summary_items(
-            ["Données de contexte", "Périmètre", "Études, statistiques et outils"]
+            [
+                "Données de contexte",
+                "Ressources financières et fiscales",
+                "Périmètre",
+                "Études, statistiques et outils"
+            ]
         ),
         "extra_classes": "fr-sidemenu--sticky-full-height fr-sidemenu--right",
     }
@@ -40,7 +45,8 @@ def page_departement_detail(request, slug):
 @require_safe
 def page_departement_liste_communes(request, slug):
     departement = get_object_or_404(Departement, slug=slug)
-    communes = departement.commune_set.all().order_by("name")
+    max_year = max(departement.commune_set.values_list("years", flat=True))
+    communes = departement.commune_set.filter(years=max_year).order_by("name")
     payload = init_payload(
         f"Liste des { communes.count() } communes du département {departement.name}",
         links=[
@@ -63,7 +69,8 @@ def page_departement_liste_communes(request, slug):
 @require_safe
 def page_departement_liste_epcis(request, slug):
     departement = get_object_or_404(Departement, slug=slug)
-    epcis = departement.list_epcis().order_by("slug")
+    max_year = max(departement.list_epcis().values_list("years", flat=True))
+    epcis = departement.list_epcis().filter(years=max_year).order_by("slug")
 
     payload = init_payload(
         f"Liste des { len(epcis) } EPCI du département {departement.name}",
