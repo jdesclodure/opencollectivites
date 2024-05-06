@@ -2,9 +2,9 @@ from collectivity_pages.services.utils import get_messages_for_collectivity
 from core.services.publications import list_publications_for_collectivity
 from django.urls.base import reverse
 from core.services.utils import init_payload
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, get_list_or_404, render
 from django.views.decorators.http import require_safe
-from francedata.models import Commune
+from francedata.models import Commune, CommuneData
 
 from collectivity_pages.services.communes import commune_data, communes_compare
 
@@ -13,7 +13,15 @@ from dsfr.utils import generate_summary_items
 
 @require_safe
 def page_commune_detail(request, slug):
-    commune = get_object_or_404(Commune, slug=slug)
+    communes = get_list_or_404(Commune, slug=slug)
+    commune = communes[0]
+    if len(communes) > 1:
+        max_year = max(c.year.year for c in CommuneData.objects.filter(commune=commune))
+        for com in communes[1:]:
+            lastest_year = max(c.year.year for c in CommuneData.objects.filter(commune=com))
+            if (max_year < lastest_year):
+                commune = com
+                max_year = max(c.year.year for c in CommuneData.objects.filter(commune=commune))
 
     payload = init_payload(f"Données locales commune : {commune.name}")
     payload["slug"] = slug
