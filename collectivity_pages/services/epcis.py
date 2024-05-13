@@ -111,6 +111,7 @@ def epci_data(siren_id, year: DataYear = None):
         "svg_icon": True,
     }
 
+    max_year = max(epci.commune_set.values_list("years", flat=True))
     response["members"] = epci.commune_set.filter(years=max_year).order_by("name")
 
     epci_context_data = EpciContextData([epci])
