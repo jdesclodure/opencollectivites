@@ -23,7 +23,9 @@ def region_data(region: Region, year: DataYear = None) -> dict:
     response["insee"] = region.insee
     response["siren"] = region.siren
 
-    communes = Commune.objects.filter(departement__region=region)
+    max_year = max(region.departement_set.values_list("years", flat=True))
+    communes = Commune.objects.filter(departement__region=region, years=max_year)
+
     if communes.count() > 1:
         response["communes_list"] = {
             "name": f"Liste des {communes.count()} communes",
@@ -69,7 +71,7 @@ def region_data(region: Region, year: DataYear = None) -> dict:
             "svg_icon": True,
         }
 
-    departements = region.departement_set.all()
+    departements = region.departement_set.filter(years=max_year)
     if departements.count() > 1:
         response["departements_list"] = {
             "name": f"Liste des {departements.count()} departements",

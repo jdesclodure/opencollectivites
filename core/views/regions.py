@@ -34,8 +34,9 @@ def page_region_detail(request, slug):
 @require_safe
 def page_region_liste_communes(request, slug):
     region = get_object_or_404(Region, slug=slug)
-    departements = region.departement_set.all().order_by("name")
-    all_communes_count = Commune.objects.filter(departement__region=region).count()
+    max_year = max(region.departement_set.values_list("years", flat=True))
+    departements = region.departement_set.filter(years=max_year).order_by("name")
+    all_communes_count = Commune.objects.filter(departement__region=region, years=max_year).count()
     payload = init_payload(
         f"Liste des { all_communes_count } communes de la région { region.name }",
         links=[
@@ -49,7 +50,7 @@ def page_region_liste_communes(request, slug):
 
     communes_by_departements = []
     for d in departements:
-        communes = d.commune_set.all().order_by("name")
+        communes = d.commune_set.filter(years=max_year).order_by("name")
         communes_by_departements.append(
             {
                 "title": f"Liste des { communes.count() } communes du département { d.name }",
@@ -68,9 +69,10 @@ def page_region_liste_communes(request, slug):
 @require_safe
 def page_region_liste_epcis(request, slug):
     region = get_object_or_404(Region, slug=slug)
-    departements = region.departement_set.all().order_by("name")
-    epcis_count = 0
-
+    max_year = max(region.departement_set.values_list("years", flat=True))
+    departements = region.departement_set.filter(years=max_year).order_by("name")
+    epcis_distinct = Commune.objects.filter(departement__region=region, years=max_year).values_list("epci__id", flat=True).distinct()
+    
     epcis_by_departements = []
     for d in departements:
         epcis = d.list_epcis()
@@ -80,10 +82,9 @@ def page_region_liste_epcis(request, slug):
                 "list": epcis,
             }
         )
-        epcis_count += epcis.count()
 
     payload = init_payload(
-        f"Liste des { epcis_count } EPCI de la région { region.name }",
+        f"Liste des { epcis_distinct.count() } EPCI de la région { region.name }",
         links=[
             {
                 "title": f"Fiche région : { region.name }",
@@ -105,7 +106,8 @@ def page_region_liste_epcis(request, slug):
 @require_safe
 def page_region_liste_departements(request, slug):
     region = get_object_or_404(Region, slug=slug)
-    departements = region.departement_set.all().order_by("name")
+    max_year = max(region.departement_set.values_list("years", flat=True))
+    departements = region.departement_set.filter(years=max_year).order_by("name")
     payload = init_payload(
         f"Liste des { departements.count() } départements de la région {region.name}",
         links=[
